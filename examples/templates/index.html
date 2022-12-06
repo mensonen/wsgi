@@ -1,0 +1,15 @@
+<html>
+    <h1>Templated index page</h1>
+
+    <p>Current page is returned by <code>app.url.path</code>
+        and is {{ app.url.path }}</p>
+    <p>Every other <code>self</code> attribute is available as well.</p>
+
+    <p>This form will post to <code>OneTemplatedPage.POST</code>, which
+        will render the <code>post_result.html</code> template.</p>
+    <form method="post">
+        <input type="text" name="firstname" placeholder="Enter your first name">
+        <input type="text" name="lastname" placeholder="Enter your last name">
+        <button type="submit">Go</button>
+    </form>
+</html>

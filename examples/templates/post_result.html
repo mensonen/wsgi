@@ -1,0 +1,10 @@
+<html>
+    <h1>Templated result page</h1>
+
+    <p>Here is <code>app.form_data</code> being iterated:</p>
+    <ul>
+    {% for key, value in app.form_data.items() %}
+        <li><strong>{{ key }}</strong> = {{ value }}</li>
+    {% endfor %}
+    </ul>
+</html>
