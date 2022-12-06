@@ -11,7 +11,7 @@ http://localhost:8080/any/other/path
 """
 from cheroot.wsgi import Server as wsgi_server
 
-from wsgi import WsgiApp, WsgiAppDispatcher, WsgiBadRequest, json_response
+from wsgi import WsgiApp, WsgiAppDispatcher
 
 
 class OnePage(WsgiApp):

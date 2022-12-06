@@ -221,9 +221,19 @@ class FileSession(MutableMapping):
 
     Automatically saves and loads session state to disk using pickle whenever
     dictionary entries change.
-    """
 
-    def __init__(self, dir_path: str, sid: str, *args: Any, **kwargs: Any):
+    The session class needs to be initiated at least once, and that instance
+    has to be called for each session ID:
+
+    >>> session_class = FileSession("/tmp")
+    >>> s1 = session_class("1")  # get a session
+    >>> s2 = session_class("2")  # get a different session
+
+    """
+    def __call__(self, sid: str, *args, **kwargs):
+        return FileSession(self.dir_path, sid, *args, **kwargs)
+
+    def __init__(self, dir_path: str, sid: str = None, *args: Any, **kwargs: Any):
         """Create a new file-based session storage.
 
         Args:
@@ -234,8 +244,9 @@ class FileSession(MutableMapping):
 
         """
         self.exists = False
-        self.dir_path = dir_path
-        self.file_path = os.path.join(dir_path, sid)
+        self.dir_path = self.file_path = dir_path
+        if sid:
+            self.file_path = os.path.join(dir_path, sid)
         self.sid = sid
 
         if args:
@@ -244,6 +255,7 @@ class FileSession(MutableMapping):
             self._data = kwargs
         else:
             self._data = {}
+
         self._load()
 
     def __delitem__(self, key):
@@ -266,30 +278,33 @@ class FileSession(MutableMapping):
         self.modified = True
 
     def _load(self):
-        try:
-            with open(self.file_path, "rb") as f:
-                self._data = pickle.load(f)
-                self.exists = True
-        except (IOError, EOFError, pickle.UnpicklingError):
-            pass
-        except Exception as e:
-            logging.getLogger("wsgi.FileSession").warning(
-                f"failed to load session: {e}")
-
-    def _save(self):
-        with open(self.file_path, "wb") as f:
+        if self.sid:
             try:
-                pickle.dump(self._data, f, pickle.HIGHEST_PROTOCOL)
-                self.exists = True
+                with open(self.file_path, "rb") as f:
+                    self._data = pickle.load(f)
+                    self.exists = True
+            except (IOError, EOFError, pickle.UnpicklingError):
+                pass
             except Exception as e:
                 logging.getLogger("wsgi.FileSession").warning(
-                    f"failed to save session: {e}")
+                    f"failed to load session: {e}")
+
+    def _save(self):
+        if self.sid:
+            with open(self.file_path, "wb") as f:
+                try:
+                    pickle.dump(self._data, f, pickle.HIGHEST_PROTOCOL)
+                    self.exists = True
+                except Exception as e:
+                    logging.getLogger("wsgi.FileSession").warning(
+                        f"failed to save session: {e}")
 
     def destroy(self):
         """Erase session and its data on disk."""
         self._data = {}
         try:
-            os.remove(self.file_path)
+            if self.sid:
+                os.remove(self.file_path)
         except Exception:
             pass
 
@@ -322,19 +337,19 @@ class LockingFileSession(FileSession):
 
     def _load(self):
         with session_locks(self.sid, timeout=2):
-            super(LockingFileSession, self)._load()
+            super()._load()
 
     def __getitem__(self, key):
         return self._data[key]
 
     def __setitem__(self, key, value):
         with session_locks(self.sid, timeout=2):
-            super(LockingFileSession, self).__setitem__(key, value)
+            super().__setitem__(key, value)
 
     def destroy(self):
         """Destroy and erase session data."""
         with session_locks(self.sid, timeout=2):
-            super(LockingFileSession, self).destroy()
+            super().destroy()
 
 
 memory_sessions = {}
@@ -382,6 +397,12 @@ class MemorySession(MutableMapping):
         if self.sid not in memory_sessions:
             memory_sessions[self.sid] = {}
             self._data = memory_sessions[self.sid]
+
+    def destroy(self):
+        self._data = {}
+
+    def save(self):
+        pass
 
 
 class WsgiApp:

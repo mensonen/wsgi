@@ -97,3 +97,21 @@ Input can also be automatically parsed.
  * `self.form_data` contains request form data as nested a dictionary of
     key-value pairs
  * `self.json` contains the request body as JSON parsed dictionary
+
+## Session support
+
+`WsgiApp` assigns a session ID and a cookie for each request automatically and 
+data can be stored in `self.session` at any time. By default sessions do not 
+persists at all, but they can be optionally stored to disk:
+
+```python 
+from wsgi import LockingFileSession, WsgiApp
+
+class MyService(WsgiApp):
+    pass
+
+MyService.session_class = LockingFileSession("/tmp")
+```
+
+Alternatively, custom session managers can be written - any mutable mapping that
+can be called with session ID as its first argument will do.
