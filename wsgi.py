@@ -460,7 +460,7 @@ class WsgiApp:
     Either an absolute path or a path relative to the current python module. 
     See `render_template` for details.
     """
-    url: NamedTuple
+    url: urllib.parse.ParseResult
     """Request URL as a result of `urllib.parse.urlparse`."""
 
     def __init__(self, dispatcher_matches: List[str] = None):
@@ -528,7 +528,7 @@ class WsgiApp:
                     try:
                         # look for <type>:<param_name> pairs in the route path
                         # and replace them with just <param_name>
-                        convert = {}
+                        convert: dict = {}
                         param_conversions = re.findall(r"<(int|str|bool|float):(.+?)>", p)
                         if param_conversions:
                             for t, param_name in param_conversions:
