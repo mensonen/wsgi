@@ -374,6 +374,10 @@ class MemorySession(MutableMapping):
         self.sid = sid
         if self.sid in memory_sessions:
             self._data = memory_sessions[self.sid]
+        elif args:
+            self._data = dict(args)
+        elif kwargs:
+            self._data = kwargs
         else:
             self._data = {}
 
