@@ -444,6 +444,8 @@ class WsgiApp:
     """
     args: dict
     """URL query parameters, or an empty dictionary."""
+    headers: dict
+    """Request headers, with header names written in Header-Notation."""
     debug: bool = False
     """Debug mode.
 
@@ -516,6 +518,12 @@ class WsgiApp:
             self.args = parse_qs_dict(self.url.query)
         else:
             self.args = {}
+
+        self.headers = {}
+        for key, value in env.items():
+            if key.startswith("HTTP_"):
+                header_name = "-".join(w.capitalize() for w in key.split("_")[1:])
+                self.headers[header_name] = value
 
         headers = [("Content-Type", "text/html")]
         http_status = "200 OK"
