@@ -16,7 +16,7 @@ import os
 from collections.abc import MutableMapping
 from datetime import datetime
 from functools import wraps
-from typing import Any, List, NamedTuple, Optional, Union, Tuple, Type
+from typing import Any, List, Optional, Union, Tuple, Type
 
 try:
     from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -112,7 +112,7 @@ class TimeoutLock:
     When creating multiple locks on the fly, `TimeoutLockManager` can automate
     lock creation and removal.
     """
-    def __init__(self, timeout=30):
+    def __init__(self, timeout: int = 30):
         self._lock = queue.Queue(1)
         self.timeout = timeout
 
@@ -430,9 +430,10 @@ class WsgiApp:
 
     Sample usage:
 
+    >>> import cheroot.wsgi
     >>> class MyApp(WsgiApp):
     >>>      def GET(self, path=None):
-    >>>      return str(path), [("Content-Type", "text/html")]
+    >>>         return str(path), [("Content-Type", "text/html")]
     >>>
     >>> # map all URLs to MyApp, catching the part after /
     >>> urls = [("/(.*)?", MyApp)]
@@ -527,7 +528,6 @@ class WsgiApp:
 
         headers = [("Content-Type", "text/html")]
         http_status = "200 OK"
-        response = ""
 
         conversion_methods = {"int": int, "str": str, "bool": bool, "float": float}
 
@@ -1080,8 +1080,9 @@ def json_response(data: dict = None, additional_headers: List[Tuple] = None,
     with some additional bonus features.
 
     Sample usage:
-    >>> return wsgi.json_response(foo="bar", bar="baz")
-    >>> return wsgi.json_response({"foo": "bar"})
+    >>> return json_response(foo="bar", bar="baz")
+    Is identical to:
+    >>> return json_response({"foo": "bar", "bar": "baz"})
 
     Args:
         data: Dictionary or object to convert to JSON, optional
@@ -1130,7 +1131,7 @@ def parse_qs_dict(qs: str, no_default_list: bool = True) -> dict:
 
     """
     qs = urllib.parse.parse_qs(qs, keep_blank_values=True)
-    result = {}
+    result: dict = {}
 
     for key, value in qs.items():
         if isinstance(value, list) and len(value) == 1 and no_default_list:
@@ -1148,7 +1149,7 @@ def parse_qs_dict(qs: str, no_default_list: bool = True) -> dict:
 
             for sub_key in sub_keys[:-1]:
                 if sub_key not in sub_result:
-                    sub_result[sub_key] = {}
+                    sub_result[sub_key]: dict = {}
                 sub_result = sub_result[sub_key]
             sub_result[sub_keys[-1]] = value
         else:
