@@ -529,7 +529,11 @@ class WsgiApp:
         headers = [("Content-Type", "text/html")]
         http_status = "200 OK"
 
-        conversion_methods = {"int": int, "str": str, "bool": bool, "float": float}
+        conversion_methods = {"int": int, "str": str, "float": float,
+                              "bool": lambda b: b.lower() in ("true", "yes")}
+        patterns = {"int:": r"[\d]+", "float:": r"[\d\.]+",
+                    "bool:": r"true|false|yes|no"}
+        word_pattern = r"[^/]+"
 
         try:
             routed_method = None
@@ -545,11 +549,19 @@ class WsgiApp:
                         if param_conversions:
                             for t, param_name in param_conversions:
                                 convert[param_name] = conversion_methods[t]
-                            p = re.sub(r"<(int|str|bool|float):(.+?)>", "<\\2>", p)
+                            # convert <type:param_name> and <param_name> to
+                            # python regex capture groups that match the specific
+                            # type. I.e (?P<param_name>\d+), (?P<param_name>\w+) etc
+                            path_match = re.sub(
+                                "<(int:|str:|bool:|float:)?(.+?)>",
+                                lambda m: f"(?P<{m[2]}>{patterns.get(m[1], word_pattern)})",
+                                p)
 
-                        # convert <param_name> to a python regex named capture
-                        # group that matches any word, i.e (?P<param_name>\w+)
-                        path_match = re.sub("<(.+?)>", "(?P<\\1>[^/]+)", p)
+                        else:
+                            # there are no conversions, just convert <param_name>
+                            # to a python regex named capture group that matches
+                            # any word, i.e (?P<param_name>\w+)
+                            path_match = re.sub("<(.+?)>", "(?P<\\1>[^/]+)", p)
 
                         if self.dispatcher_matches:
                             match_against = self.dispatcher_matches[0]
