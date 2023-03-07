@@ -460,7 +460,7 @@ class WsgiApp:
     Overwrite this to change from `MemorySession` to e.g `FileSession`. Can 
     be any dict-like mutable interface.
     """
-    routes = {"GET": [], "POST": [], "PUT": [], "DELETE": []}
+    routes = {"GET": [], "POST": [], "PUT": [], "DELETE": [], "OPTIONS": []}
     template_path: str = "templates/"
     """Path for templates.
     Either an absolute path or a path relative to the current python module. 
@@ -583,6 +583,9 @@ class WsgiApp:
 
             elif env["REQUEST_METHOD"] == "GET":
                 response = self.GET(*self.dispatcher_matches)
+
+            elif env["REQUEST_METHOD"] == "OPTIONS":
+                response = self.OPTIONS(*self.dispatcher_matches)
 
             elif env["REQUEST_METHOD"] == "PUT":
                 response = self.PUT(*self.dispatcher_matches)
@@ -774,6 +777,15 @@ class WsgiApp:
         """Method called for an HTTP GET request.
 
         This method is called if the HTTP REQUEST_METHOD is "GET", unless a
+        method routed using `route` is called instead. Should be overwritten by
+        the implementing class, otherwise will raise `WsgiMethodNotAllowed`.
+        """
+        raise WsgiMethodNotallowed()
+
+    def OPTIONS(self, *args):
+        """Method called for an HTTP OPTIONS request.
+
+        This method is called if the HTTP REQUEST_METHOD is "OPTIONS", unless a
         method routed using `route` is called instead. Should be overwritten by
         the implementing class, otherwise will raise `WsgiMethodNotAllowed`.
         """
