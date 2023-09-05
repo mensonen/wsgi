@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 import json
 import logging
@@ -16,7 +18,7 @@ import os
 from collections.abc import MutableMapping
 from datetime import datetime
 from functools import wraps
-from typing import Any, List, Optional, Union, Tuple, Type
+from typing import Any, Type, Sequence
 
 try:
     from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -470,7 +472,7 @@ class WsgiApp:
     url: urllib.parse.ParseResult
     """Request URL as a result of `urllib.parse.urlparse`."""
 
-    def __init__(self, dispatcher_matches: List[str] = None):
+    def __init__(self, dispatcher_matches: list[str] = None):
         """Creates a new app request instance.
 
         A new instance should never be created manually. Instead, pass the class
@@ -529,8 +531,9 @@ class WsgiApp:
         headers = [("Content-Type", "text/html")]
         http_status = "200 OK"
 
-        conversion_methods = {"int": int, "str": str, "float": float,
-                              "bool": lambda b: b.lower() in ("true", "yes")}
+        conversion_methods = {
+            "int": int, "str": str, "float": float,
+            "bool": lambda b: b.lower() in ("true", "yes")}
         patterns = {"int:": r"[\d]+", "float:": r"[\d\.]+",
                     "bool:": r"true|false|yes|no"}
         word_pattern = r"[^/]+"
@@ -541,6 +544,15 @@ class WsgiApp:
 
             if self.routes and self.routes[env["REQUEST_METHOD"]]:
                 for p, method in self.routes[env["REQUEST_METHOD"]]:
+                    # since routes are defined on the class level, and the
+                    # routes don't have any knowledge of the class that
+                    # WsgiAppDispatcher has picked, path collisions may exist.
+                    # This filters out routes that don't actually belong to
+                    # "self".
+                    method_classname = method.__qualname__.split(".")[0]
+                    if method_classname != self.__class__.__name__:
+                        continue
+
                     try:
                         # look for <type>:<param_name> pairs in the route path
                         # and replace them with just <param_name>
@@ -570,7 +582,8 @@ class WsgiApp:
                             match_against = env["PATH_INFO"]
                             self.base_path = ""
 
-                        result = re.match("^" + path_match + "$", match_against)
+                        result = re.match("^" + path_match + "$", match_against,
+                                          flags=re.IGNORECASE)
                         if result:
                             routed_method = method
                             route_path_matches = result.groupdict()
@@ -702,7 +715,7 @@ class WsgiApp:
         return json.loads(self._read_input())
 
     @classmethod
-    def route(cls, path: str, methods: Union[List[str], str, None] = None):
+    def route(cls, path: str, methods: list[str] | str | None = None):
         """Route specific paths inside an app to a method.
 
         For apps that handle multiple different paths with different logic, this
@@ -843,7 +856,7 @@ class WsgiApp:
         """
         pass
 
-    def render_template(self, template_name: str, **kwargs: Any) -> Tuple[str, Tuple]:
+    def render_template(self, template_name: str, **kwargs: Any) -> tuple[str, tuple]:
         """Render a template file and return a WSGI compliant response.
 
         Loads a template file located in the template folder and renders it as
@@ -906,7 +919,7 @@ class WsgiAppDispatcher:
     to the server.
     """
 
-    def __init__(self, pathmap: List[Tuple[str, Type[WsgiApp]]]):
+    def __init__(self, pathmap: Sequence[tuple[str, Type[WsgiApp]]]):
         """Create a new app dispatcher.
 
         Args:
@@ -960,23 +973,23 @@ class WsgiHttpResponse:
 
     >>> return WsgiHttpResponse("This page no longer exists", 302)
     """
-    code: Optional[int] = None
+    code: int | None = None
     """HTTP status code"""
-    description: Optional[str] = None
+    description: str | None = None
     """Short description.
-
+    
     If set, and data is not set, will return a simple HTML page to browser with
     the HTTP status as header and the short description as a single paragraph
     in the body.
     """
-    data: Optional[str] = None
+    data: str | None = None
     """Alternative response data.
-
+    
     If set, will be returned to browser as-is.
     """
-    headers: Optional[List[Tuple]]
+    headers: list[tuple] | None
     """A list of headers to send with the response.
-
+    
     Initially contains just Content-Type: text/html, but can be extended or
     overwritten
     """
@@ -1082,8 +1095,8 @@ class WsgiMethodNotallowed(WsgiHttpError):
     description = "Invalid method or method not allowed for the requested URL"
 
 
-def json_response(data: dict = None, additional_headers: List[Tuple] = None,
-                  **kwargs: Any) -> Tuple[str, List[Tuple]]:
+def json_response(data: dict = None, additional_headers: list[tuple] = None,
+                  **kwargs: Any) -> tuple[str, list[tuple]]:
     """A helper method to produce a JSON response.
 
     A simple wrapper to produce a WSGI-compliant response, a shortcut to:
