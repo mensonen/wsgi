@@ -957,7 +957,7 @@ class WsgiAppDispatcher:
 
         start_response("404 Not Found", [("Content-Type", "text/plain"),
                                          ("Content-Length", "0")])
-        return [""]
+        return [b""]
 
 
 class WsgiHttpResponse:
