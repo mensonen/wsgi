@@ -1012,7 +1012,7 @@ class WsgiHttpResponse:
         if self.data:
             return self.data
 
-        return "<html><h1>{} {}</h1><p>{}</p></html".format(
+        return "<html><h1>{} {}</h1><p>{}</p></html>".format(
             self.code, self.name, self.description or "")
 
     @property
