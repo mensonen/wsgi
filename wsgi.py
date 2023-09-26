@@ -40,6 +40,7 @@ HTTP_STATUS_CODES = {
     205: "Reset Content",
     206: "Partial Content",
     207: "Multi Status",
+    218: "This is fine",
     226: "IM Used",
     300: "Multiple Choices",
     301: "Moved Permanently",
@@ -67,23 +68,40 @@ HTTP_STATUS_CODES = {
     416: "Requested Range Not Satisfiable",
     417: "Expectation Failed",
     418: "I'm a teapot",
+    419: "Page Expired",
+    420: "Method Failure",
+    421: "Misdirected Request",
     422: "Unprocessable Entity",
     423: "Locked",
     424: "Failed Dependency",
+    425: "Too Early",
     426: "Upgrade Required",
     428: "Precondition Required",
     429: "Too Many Requests",
+    430: "Request Header Fields Too Large",
     431: "Request Header Fields Too Large",
+    440: "Login Time-out",
+    444: "No Response",
     449: "Retry With",
     451: "Unavailable For Legal Reasons",
+    494: "Request header too large",
+    495: "SSL Certificate Error",
+    496: "SSL Certificate Required",
+    497: "HTTP Request Sent to HTTPS Port",
+    498: "Invalid Token",
+    499: "Token Required",
     500: "Internal Server Error",
     501: "Not Implemented",
     502: "Bad Gateway",
     503: "Service Unavailable",
     504: "Gateway Timeout",
     505: "HTTP Version Not Supported",
+    506: "Variant Also Negotiates",
     507: "Insufficient Storage",
-    510: "Not Extended"}
+    508: "Loop Detected",
+    509: "Bandwidth Limit Exceeded",
+    510: "Not Extended",
+    511: "Network Authentication Required"}
 
 
 class TimeoutLockError(Exception):
@@ -522,7 +540,7 @@ class WsgiApp:
         else:
             self.args = {}
 
-        self.headers = {}
+        self.headers: dict[str, str] = {}
         for key, value in env.items():
             if key.startswith("HTTP_"):
                 header_name = "-".join(w.capitalize() for w in key.split("_")[1:])
