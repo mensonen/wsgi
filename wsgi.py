@@ -1113,7 +1113,8 @@ class WsgiMethodNotallowed(WsgiHttpError):
     description = "Invalid method or method not allowed for the requested URL"
 
 
-def json_response(data: dict = None, additional_headers: list[tuple] = None,
+def json_response(data: dict | list = None,
+                  additional_headers: list[tuple] = None,
                   **kwargs: Any) -> tuple[str, list[tuple]]:
     """A helper method to produce a JSON response.
 
