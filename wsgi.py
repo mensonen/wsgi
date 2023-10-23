@@ -532,7 +532,15 @@ class WsgiApp:
 
         self.base_path = ""
         self.env = env
-        self.url = urllib.parse.urlparse(env.get("REQUEST_URI"))
+        if "REQUEST_URI" in env:
+            # mod_wsgi, uwsgi
+            self.url = urllib.parse.urlparse(env["REQUEST_URI"])
+        elif "RAW_URI" in env:
+            # gunicorn
+            self.url = urllib.parse.urlparse(env["RAW_URI"])
+        else:
+            # fallback is just empty
+            self.url = urllib.parse.urlparse("")
         self.session = self.session_class(env["SESSION_ID"])
 
         if self.url.query:
