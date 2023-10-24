@@ -473,6 +473,12 @@ class WsgiApp:
     When True, detailed errors are shown in browser. When False, only 500 
     Server errors are returned.
     """
+    request_uri: str
+    """Full, (almost) original request URI. If provided by the HTTP server, as
+    either the REQUEST_URI (mod_wsgi, uwsgi) or the RAW_URI (gunicorn) 
+    environment variable, it is used as-is. If neither is present, it is 
+    re-constructed from various environment variables, according to PEP-3333.
+    """
     server_version: str = "Python/WSGI"
     """Server version, set as the "Server" header in all responses."""
     session_class: Type[MutableMapping] = MemorySession
@@ -532,15 +538,38 @@ class WsgiApp:
 
         self.base_path = ""
         self.env = env
+
         if "REQUEST_URI" in env:
             # mod_wsgi, uwsgi
             self.url = urllib.parse.urlparse(env["REQUEST_URI"])
+            self.request_uri = env["REQUEST_URI"]
         elif "RAW_URI" in env:
             # gunicorn
             self.url = urllib.parse.urlparse(env["RAW_URI"])
+            self.request_uri = env["RAW_URI"]
         else:
-            # fallback is just empty
-            self.url = urllib.parse.urlparse("")
+            # fallback is attempting to do it ourselves, this is straight from
+            # PEP-3333
+            url = env["wsgi.url_scheme"] + "://"
+            if env.get("HTTP_HOST"):
+                url += env["HTTP_HOST"]
+            else:
+                url += env["SERVER_NAME"]
+                if env["wsgi.url_scheme"] == "https":
+                    if env["SERVER_PORT"] != "443":
+                        url += ":" + env["SERVER_PORT"]
+                else:
+                    if env["SERVER_PORT"] != "80":
+                        url += ":" + env["SERVER_PORT"]
+
+            url += urllib.parse.quote(env.get("SCRIPT_NAME", ""))
+            url += urllib.parse.quote(env.get("PATH_INFO", ""))
+            if env.get("QUERY_STRING"):
+                url += "?" + env["QUERY_STRING"]
+
+            self.url = urllib.parse.urlparse(url)
+            self.request_uri = url
+
         self.session = self.session_class(env["SESSION_ID"])
 
         if self.url.query:
