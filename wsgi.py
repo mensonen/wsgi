@@ -151,8 +151,8 @@ class TimeoutLock:
         """Acquire a lock."""
         try:
             self._lock.put(1, block=True, timeout=self.timeout)
-        except queue.Full:
-            raise TimeoutLockError().with_traceback(sys.exc_info()[2])
+        except queue.Full as e:
+            raise TimeoutLockError().with_traceback(e.__traceback__) from None
 
     def unlock(self):
         """Release a lock."""
@@ -335,7 +335,7 @@ class FileSession(MutableMapping):
         is altered. A session will not save if one contents of its mutable
         properties are altered.
 
-        >>> s = FileSession("/tmp", 1)
+        >>> s = FileSession("/tmp", "1")
         >>> s["customer"] = "Anonymous"  # auto-saved
         >>> s["cart"] = {"item_count": 0}  # auto-saved
         >>> s["cart"]["item_count"] += 1  # NOT auto-saved
